@@ -194,6 +194,67 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+vim.keymap.set('n', 'qq', '<cmd>close<CR>', { desc = 'Close current window' })
+
+-- Window resize
+-- Increase height
+vim.keymap.set('n', '<C-Up>', '<C-w>+', { desc = 'Increase window height' })
+
+-- Decrease height
+vim.keymap.set('n', '<C-Down>', '<C-w>-', { desc = 'Decrease window height' })
+
+-- Decrease width
+vim.keymap.set('n', '<C-Left>', '<C-w><', { desc = 'Decrease window width' })
+
+-- Increase width
+vim.keymap.set('n', '<C-Right>', '<C-w>>', { desc = 'Increase window width' })
+
+-- Buffer
+vim.keymap.set('n', '<leader>bd', ':bp | bd #<CR>', { noremap = true, silent = true, desc = 'Close buffer but keep window' })
+-- Move current buffer to the RIGHT window, but keep both windows open
+vim.keymap.set('n', '<leader>bl', function()
+  local current_win = vim.api.nvim_get_current_win()
+  local current_buf = vim.api.nvim_get_current_buf()
+
+  local wins = vim.api.nvim_tabpage_list_wins(0)
+  local target_win = wins[2] -- assume right window is the second in the list
+
+  if target_win then
+    -- 1) Open this buffer in the target window
+    vim.api.nvim_win_call(target_win, function()
+      vim.cmd('buffer ' .. current_buf)
+    end)
+
+    -- 2) Switch back to the original window and open a new, empty buffer
+    vim.api.nvim_set_current_win(current_win)
+    vim.cmd 'enew'
+  else
+    print 'No right window available'
+  end
+end, { desc = 'Move current buffer to right window' })
+
+-- Move current buffer to the LEFT window, but keep both windows open
+vim.keymap.set('n', '<leader>bh', function()
+  local current_win = vim.api.nvim_get_current_win()
+  local current_buf = vim.api.nvim_get_current_buf()
+
+  local wins = vim.api.nvim_tabpage_list_wins(0)
+  local target_win = wins[1] -- assume left window is the first in the list
+
+  if target_win then
+    -- 1) Open this buffer in the target window
+    vim.api.nvim_win_call(target_win, function()
+      vim.cmd('buffer ' .. current_buf)
+    end)
+
+    -- 2) Switch back to the original window and open a new, empty buffer
+    vim.api.nvim_set_current_win(current_win)
+    vim.cmd 'enew'
+  else
+    print 'No left window available'
+  end
+end, { desc = 'Move current buffer to left window' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -290,7 +351,7 @@ require('lazy').setup({
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
       -- this setting is independent of vim.opt.timeoutlen
-      delay = 0,
+      delay = 400,
       icons = {
         -- set icon mappings to true if you have a Nerd Font
         mappings = vim.g.have_nerd_font,
@@ -335,6 +396,7 @@ require('lazy').setup({
         { '<leader>r', group = '[R]ename' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>w', group = '[W]orkspace' },
+        { '<leader>b', group = '[B]uffer' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
@@ -605,6 +667,13 @@ require('lazy').setup({
             })
           end
 
+          if client and client.name == 'clangd' then
+            vim.keymap.set('n', '<leader>ch', '<cmd>ClangdSwitchSourceHeader<CR>', {
+              buffer = event.buf,
+              desc = 'Switch between source & header (clangd)',
+            })
+          end
+
           -- The following code creates a keymap to toggle inlay hints in your
           -- code, if the language server you are using supports them
           --
@@ -663,7 +732,7 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
+        clangd = {},
         -- gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
@@ -997,7 +1066,7 @@ require('lazy').setup({
   --    This is the easiest way to modularize your config.
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
   --
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
